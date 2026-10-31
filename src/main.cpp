@@ -10,58 +10,104 @@
 
 // Our own header files
 #include "TextFile.h"
+#include "KeyValues.h"
 
 using namespace Microsoft::WRL;
 
 UINT resizeWidth = 0;
 UINT resizeHeight = 0;
 
-
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam){
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
     if (ImGui_ImplWin32_WndProcHandler(hwnd, message, wParam, lParam))
         return true;
 
     switch (message)
     {
-        case WM_DESTROY:
+    case WM_DESTROY:
         // Destroying window, post quit message
         PostQuitMessage(0);
         return 0;
-        
-        case WM_SIZE:
-            if (wParam == SIZE_MINIMIZED) {
-                return 0;
-            }
-            resizeWidth = LOWORD(lParam);
-            resizeHeight = HIWORD(lParam);
+
+    case WM_SIZE:
+        if (wParam == SIZE_MINIMIZED)
+        {
             return 0;
+        }
+        resizeWidth = LOWORD(lParam);
+        resizeHeight = HIWORD(lParam);
+        return 0;
     }
     return DefWindowProcW(hwnd, message, wParam, lParam);
 }
 
-
-int main(int argc, char* argv[]){
-    //Just testing -- Remove this later?
+int main(int argc, char *argv[])
+{
+    // Just testing -- Remove this later?
     std::cout << "Relief" << '\n';
 
-    if (argc >= 2) {
+    if (argc >= 2)
+    {
         std::string text;
-        if (readTextFile(argv[1], text)) {
+        if (readTextFile(argv[1], text))
+        {
             int lines = 0;
-            for (char c : text) {
-                    if (c == '\n') {
-                        lines++;
+            for (char c : text)
+            {
+                if (c == '\n')
+                {
+                    lines++;
+                }
+            }
+
+            std::cout << "Read " << text.size() << " bytes, " << lines << " lines" << std::endl;
+
+            std::vector<Token> tokens;
+            if (tokenize(text, tokens))
+            {
+                // Counting tokens on load, this is how we actually read the .vmf
+                int strings = 0;
+                int openBraces = 0;
+                int closeBraces = 0;
+                for (const Token &t : tokens)
+                {
+                    if (t.type == TokenKind::String)
+                    {
+                        strings++;
+                    }
+                    else if (t.type == TokenKind::OpenBrace)
+                    {
+                        openBraces++;
+                    }
+                    else if (t.type == TokenKind::CloseBrace)
+                    {
+                        closeBraces++;
                     }
                 }
-            std::cout << "Read " << text.size() << " bytes, " << lines << " lines" << std::endl;
-            } 
-        else {
+                std::cout << tokens.size() << " tokens: "
+                          << strings << " strings, "
+                          << openBraces << " {, "
+                          << closeBraces << " }\n";
+
+                for (size_t i = 0; i < 8 && i < tokens.size(); i++)
+                {
+                    std::cout << tokens[i].text << ' ';
+                }
+                std::cout << '\n';
+            }
+            else
+            {
+                std::cout << "Could not Tokenize " << argv[1] << '\n';
+            }
+        }
+        else
+        {
             std::cout << "Failed to open " << argv[1] << std::endl;
         }
-    }   
+    }
 
-    //Define the window class
+    // Define the window class
     WNDCLASSEXW wb{};
     wb.cbSize = sizeof(WNDCLASSEXW);
     wb.lpfnWndProc = WindowProc;
@@ -70,7 +116,7 @@ int main(int argc, char* argv[]){
 
     RegisterClassExW(&wb);
 
-    //Now create a window
+    // Now create a window
     HWND hwnd = CreateWindowExW(
         0,
         L"ReliefWindowClass",
@@ -80,8 +126,7 @@ int main(int argc, char* argv[]){
         nullptr,
         nullptr,
         GetModuleHandleW(nullptr),
-        nullptr
-    );
+        nullptr);
     ShowWindow(hwnd, SW_SHOW);
 
     // Initialize d3d11 device and swap chain
@@ -111,10 +156,10 @@ int main(int argc, char* argv[]){
         swapChain.GetAddressOf(),
         device.GetAddressOf(),
         nullptr,
-        context.GetAddressOf()
-    );
+        context.GetAddressOf());
     // Device creation failed, print error and exit
-    if (FAILED(hr)) {
+    if (FAILED(hr))
+    {
         std::cout << "Could not create Direct3D device\n";
         return 1;
     }
@@ -126,8 +171,7 @@ int main(int argc, char* argv[]){
     ComPtr<ID3D11RenderTargetView> renderTarget;
     device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTarget.GetAddressOf());
 
-
-    //Initialize ImGui
+    // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
@@ -137,26 +181,32 @@ int main(int argc, char* argv[]){
     // New message loop
     MSG msg{};
     bool running = true;
-    float clearColor[4] = { 0.10f, 0.12f, 0.16f, 1.0f }; 
-    while (running){
+    float clearColor[4] = {0.10f, 0.12f, 0.16f, 1.0f};
+    while (running)
+    {
 
-        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)){
-            if (msg.message == WM_QUIT){
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            if (msg.message == WM_QUIT)
+            {
                 running = false;
             }
             TranslateMessage(&msg);
             DispatchMessageW(&msg);
         }
 
-        if (!running){
+        if (!running)
+        {
             break;
         }
         // This needs to be inside an If statement, otherwise it'll run on every frame and tank performance. Especially if we have a displacement heavy scene.
-        if (resizeWidth != 0 && resizeHeight != 0) {
+        if (resizeWidth != 0 && resizeHeight != 0)
+        {
             renderTarget.Reset();
             backBuffer.Reset();
             HRESULT resizeResult = swapChain->ResizeBuffers(0, resizeWidth, resizeHeight, DXGI_FORMAT_UNKNOWN, 0);
-            if (FAILED(resizeResult)) {
+            if (FAILED(resizeResult))
+            {
                 std::cout << "Failed to resize swap chain buffers\n";
             }
             // Set the globals back to 0, so we don't keep resizing every frame
@@ -167,7 +217,6 @@ int main(int argc, char* argv[]){
             swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
             device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTarget.GetAddressOf());
         }
-
 
         // Start ImGui frames
         ImGui_ImplDX11_NewFrame();
