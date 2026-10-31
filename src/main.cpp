@@ -3,9 +3,20 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 
+// Bring in Imgui
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
 using namespace Microsoft::WRL;
 
+
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam){
+    if (ImGui_ImplWin32_WndProcHandler(hwnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
         case WM_DESTROY:
@@ -85,9 +96,18 @@ int main(){
     ComPtr<ID3D11RenderTargetView> renderTarget;
     device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTarget.GetAddressOf());
 
+
+    //Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplDX11_Init(device.Get(), context.Get());
+
     // New message loop
     MSG msg{};
     bool running = true;
+    float clearColor[4] = { 0.10f, 0.12f, 0.16f, 1.0f }; 
     while (running){
 
         while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)){
@@ -102,10 +122,31 @@ int main(){
             break;
         }
 
+        // Start ImGui frames
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        // Add the Imgui Demo, remove later
+        ImGui::ShowDemoWindow();
+
+        // Our own ImGui window
+        ImGui::Begin("Relief");
+        ImGui::Text("Hello says Relief!");
+        ImGui::ColorEdit3("Background", clearColor);
+        ImGui::End();
+
+        ImGui::Render();
+
         // Here we draw our frame
-        float clearColor[4] = { 0.10f, 0.12f, 0.16f, 1.0f }; 
         context->ClearRenderTargetView(renderTarget.Get(), clearColor);
+
+        context->OMSetRenderTargets(1, renderTarget.GetAddressOf(), nullptr);
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
         swapChain->Present(1, 0); // Present with vsync
     }
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
     return 0;
 }
