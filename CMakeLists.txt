@@ -23,5 +23,5 @@ ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp)
 
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 
-add_executable(Relief src/main.cpp)
+add_executable(Relief src/main.cpp src/TextFile.cpp)
 target_link_libraries(Relief PRIVATE d3d11 imgui)

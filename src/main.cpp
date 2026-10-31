@@ -8,6 +8,9 @@
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 
+// Our own header files
+#include "TextFile.h"
+
 using namespace Microsoft::WRL;
 
 UINT resizeWidth = 0;
@@ -38,9 +41,26 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
 }
 
 
-int main(){
+int main(int argc, char* argv[]){
     //Just testing -- Remove this later?
     std::cout << "Relief" << '\n';
+
+    if (argc >= 2) {
+        std::string text;
+        if (readTextFile(argv[1], text)) {
+            int lines = 0;
+            for (char c : text) {
+                    if (c == '\n') {
+                        lines++;
+                    }
+                }
+            std::cout << "Read " << text.size() << " bytes, " << lines << " lines" << std::endl;
+            } 
+        else {
+            std::cout << "Failed to open " << argv[1] << std::endl;
+        }
+    }   
+
     //Define the window class
     WNDCLASSEXW wb{};
     wb.cbSize = sizeof(WNDCLASSEXW);
