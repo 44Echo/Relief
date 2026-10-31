@@ -10,6 +10,8 @@
 
 using namespace Microsoft::WRL;
 
+UINT resizeWidth = 0;
+UINT resizeHeight = 0;
 
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -23,6 +25,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lPara
         // Destroying window, post quit message
         PostQuitMessage(0);
         return 0;
+        
+        case WM_SIZE:
+            if (wParam == SIZE_MINIMIZED) {
+                return 0;
+            }
+            resizeWidth = LOWORD(lParam);
+            resizeHeight = HIWORD(lParam);
+            return 0;
     }
     return DefWindowProcW(hwnd, message, wParam, lParam);
 }
@@ -121,6 +131,23 @@ int main(){
         if (!running){
             break;
         }
+        // This needs to be inside an If statement, otherwise it'll run on every frame and tank performance. Especially if we have a displacement heavy scene.
+        if (resizeWidth != 0 && resizeHeight != 0) {
+            renderTarget.Reset();
+            backBuffer.Reset();
+            HRESULT resizeResult = swapChain->ResizeBuffers(0, resizeWidth, resizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+            if (FAILED(resizeResult)) {
+                std::cout << "Failed to resize swap chain buffers\n";
+            }
+            // Set the globals back to 0, so we don't keep resizing every frame
+            resizeWidth = 0;
+            resizeHeight = 0;
+
+            // If this lives outside the if statement, they'll create a memory leak, as the old backbuffer and render target view will never be released.
+            swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+            device->CreateRenderTargetView(backBuffer.Get(), nullptr, renderTarget.GetAddressOf());
+        }
+
 
         // Start ImGui frames
         ImGui_ImplDX11_NewFrame();
