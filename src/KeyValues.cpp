@@ -132,3 +132,12 @@ int countBlocks(const KvNode& node, const std::string& name){
     }
     return count;
 }
+
+KvNode* findChild(KvNode& node, const std::string& key) {
+    for (KvNode& child : node.children) {
+        if (child.key == key) {
+            return &child;
+        }
+    }
+    return nullptr;
+}

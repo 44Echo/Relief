@@ -11,6 +11,7 @@
 // Our own header files
 #include "TextFile.h"
 #include "KeyValues.h"
+#include "Displacement.h"
 
 
 
@@ -98,6 +99,7 @@ int main(int argc, char *argv[])
                 }
                 std::cout << '\n';
 
+                // Here we start reporting what we found in the vmf file
                 KvNode root;
                 if (parseKeyValues(tokens, root))
                 {
@@ -108,7 +110,25 @@ int main(int argc, char *argv[])
                     std::cout << '\n';
                     std::cout << countBlocks(root, "solid") << " solids, "
                                 << countBlocks(root, "dispinfo") << " displacements\n";
+
+                     // Here we start reporting and collecting what the displacements are actually made out of
+                    std::vector<Displacement> displacements;
+                    if (collectDisplacements(root, displacements)){
+                        std::cout << "Collected " << displacements.size() << " displacements:\n";
+                        if (!displacements.empty()){
+                            const Displacement& first = displacements[0];
+                            KvNode* id = findChild(*first.side, "id");
+                            if (id != nullptr){
+                                std::cout << "First: side " << id->value << ", power " << first.power << '\n';
+                            }
+                        }
+                
+                    }
+                    else {
+                        std::cout << "Broken displacements in " << argv[1] << '\n';
+                    }   
                 }
+
                 else {
                     std::cout << "Could not parse Keyvalues in " << argv[1] << '\n';
                 }
