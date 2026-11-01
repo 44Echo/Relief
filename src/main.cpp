@@ -90,11 +90,24 @@ int main(int argc, char *argv[])
                           << openBraces << " {, "
                           << closeBraces << " }\n";
 
-                for (size_t i = 0; i < 8 && i < tokens.size(); i++)
+                for (size_t i = 0; i < 8 && i < tokens.size(); i++)// Here we print out first 8 tokens, just to see if it works -- Cleanup later
                 {
                     std::cout << tokens[i].text << ' ';
                 }
                 std::cout << '\n';
+
+                KvNode root;
+                if (parseKeyValues(tokens, root))
+                {
+                    std::cout << "Parsed " << root.children.size() << " top-level blocks:\n";
+                    for (const KvNode &child : root.children){
+                        std::cout << child.key << ' ';
+                    }
+                    std::cout << '\n';
+                }
+                else {
+                    std::cout << "Could not parse Keyvalues in " << argv[1] << '\n';
+                }
             }
             else
             {

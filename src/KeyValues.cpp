@@ -60,3 +60,59 @@ bool tokenize(const std::string &text, std::vector<Token> &tokens)
     }
     return true;
 }
+
+static bool parseChildren(const std::vector<Token>& tokens, size_t& i, KvNode& parent){
+    while (i < tokens.size()) {
+        const Token& t = tokens[i];
+
+        if (t.type == TokenKind::CloseBrace) {
+            return true;
+        }
+        if (t.type != TokenKind::String) {
+            return false;
+        }
+
+        std::string key = t.text;
+        i++;
+        if (i >= tokens.size()) {
+            return false;
+        }
+
+        const Token& next = tokens[i];
+        // Three possible cases
+        if (next.type == TokenKind::String) {
+            KvNode pair;
+            pair.key = key;
+            pair.value = next.text;
+            parent.children.push_back(pair);
+            i++;
+        }
+        else if (next.type == TokenKind::OpenBrace) {
+            i++;
+            KvNode block;
+            block.key = key;
+            block.isBlock = true;
+            if (!parseChildren(tokens, i, block)) {
+                return false;
+            }
+            if (i >= tokens.size() || tokens[i].type != TokenKind::CloseBrace) {
+                return false;
+            }
+            i++; //Step past the closing brace
+            parent.children.push_back(block);
+        }
+        else {
+            return false;
+        }
+
+    }
+    return true;
+}
+
+bool parseKeyValues(const std::vector<Token>& tokens, KvNode& root) {
+    size_t i = 0;
+    if (!parseChildren(tokens, i, root)) {
+        return false;
+    }
+    return i == tokens.size(); //Make sure all available tokens were consumed
+}

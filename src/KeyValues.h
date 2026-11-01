@@ -13,4 +13,13 @@ struct Token {
     std::string text;
 };
 
+// Nested Keyvalue stuctures from vmf files
+struct KvNode {
+    std::string key;
+    std::string value;
+    bool isBlock = false;
+    std::vector<KvNode> children;
+};
+
 bool tokenize(const std::string& text, std::vector<Token>& tokens);
+bool parseKeyValues(const std::vector<Token>& tokens, KvNode& root);
