@@ -23,3 +23,4 @@ struct KvNode {
 
 bool tokenize(const std::string& text, std::vector<Token>& tokens);
 bool parseKeyValues(const std::vector<Token>& tokens, KvNode& root);
+int countBlocks(const KvNode& node, const std::string& name);

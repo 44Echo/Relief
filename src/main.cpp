@@ -12,6 +12,8 @@
 #include "TextFile.h"
 #include "KeyValues.h"
 
+
+
 using namespace Microsoft::WRL;
 
 UINT resizeWidth = 0;
@@ -104,6 +106,8 @@ int main(int argc, char *argv[])
                         std::cout << child.key << ' ';
                     }
                     std::cout << '\n';
+                    std::cout << countBlocks(root, "solid") << " solids, "
+                                << countBlocks(root, "dispinfo") << " displacements\n";
                 }
                 else {
                     std::cout << "Could not parse Keyvalues in " << argv[1] << '\n';

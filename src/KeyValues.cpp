@@ -1,4 +1,5 @@
 #include "KeyValues.h"
+#include <utility>
 
 static bool isWhiteSpace(char c)
 {
@@ -84,7 +85,7 @@ static bool parseChildren(const std::vector<Token>& tokens, size_t& i, KvNode& p
             KvNode pair;
             pair.key = key;
             pair.value = next.text;
-            parent.children.push_back(pair);
+            parent.children.push_back(std::move(pair));
             i++;
         }
         else if (next.type == TokenKind::OpenBrace) {
@@ -99,7 +100,7 @@ static bool parseChildren(const std::vector<Token>& tokens, size_t& i, KvNode& p
                 return false;
             }
             i++; //Step past the closing brace
-            parent.children.push_back(block);
+            parent.children.push_back(std::move(block));
         }
         else {
             return false;
@@ -115,4 +116,19 @@ bool parseKeyValues(const std::vector<Token>& tokens, KvNode& root) {
         return false;
     }
     return i == tokens.size(); //Make sure all available tokens were consumed
+}
+
+
+/*
+Here we actually count the numbers of blocks with a given name, such as Solids or Displacements, for Relief Displacements is the critical part.
+*/
+int countBlocks(const KvNode& node, const std::string& name){
+    int count = 0;
+    if (node.isBlock && node.key == name) {
+        count++;
+    }
+    for (const KvNode& child : node.children) {
+        count += countBlocks(child, name);
+    }
+    return count;
 }
