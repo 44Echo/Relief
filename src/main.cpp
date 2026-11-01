@@ -126,7 +126,22 @@ int main(int argc, char *argv[])
                     }
                     else {
                         std::cout << "Broken displacements in " << argv[1] << '\n';
-                    }   
+                    }  
+                    
+                    int totalDistance = 0;
+                    int totalNormals = 0;
+                    float largestDistance = 0.0f;
+                    for (const Displacement& disp : displacements){
+                        totalDistance += disp.distances.size();
+                        totalNormals += disp.normals.size();
+                        for (float v : disp.distances){
+                            if (v > largestDistance){
+                                largestDistance = v;
+                            }
+                        }
+                    }
+                    std::cout << "Read " << totalDistance << " distances and " << totalNormals << " normals\n";
+                    std::cout << "Largest distance: " << largestDistance << '\n';
                 }
 
                 else {
